@@ -1,7 +1,6 @@
 /*
-This file contains the global variable declarations, function declarations, 
-and some definitions used in many of the routines. The global variables are 
-defined in the file latticeeasy.cpp.
+This file contains declarations of global variable and important function.
+Important function is used in "latticeeasy.cpp".
 */
 
 #ifndef _LATTICEEASYHEADER_
@@ -32,7 +31,7 @@ extern double asub2,adsub2;
 extern double ka,kad;
 
 extern double hubble_init;
-extern int run_number; // 0 for a first run, 1 for a continuation of a "0" run, etc.. Stored in the grid image (see checkpoint() function).
+extern int run_number;
 extern double rescaling;
 extern char ext_[500];
 extern char mode_[]; // Mode in which to open files, i.e. write ("w") or append ("a+").

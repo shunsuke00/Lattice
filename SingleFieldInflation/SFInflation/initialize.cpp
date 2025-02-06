@@ -1,10 +1,10 @@
+/* This file implement important function "initialize()" */
+
 #include "latticeeasy.hpp"
 #include <random>
 
 
-/* Generating [0,1] random number using the Park-Miller minimum standard algorithm */
-/*---------------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------------*/
+// Generating [0,1] random number using the Park-Miller algorithm
 #define randa 16807
 #define randm 2147483647
 #define randq 127773
@@ -32,21 +32,7 @@ double rand_uniform(void)
 #undef randr
 
 
-
-/* Setting inflaton fluctuation */
-/*---------------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------------*/
-char uniname_[100];
-
-/*
-  - Bunchdavis / Hankel 
-  - One wave / Two waves
-  - field derivative is Dependent / Independent  (No vibration spectram is Dependent)
-  Good condition is Hankel, Two waves, Dependent fluctuations
-*/
-
-
-// initial mode function setup
+// Generating Inflaton Mode Function
 void set_mode(double keff, double *field, double *deriv, int real)
 {
   double uni_X1,uni_Y1,uni_X2,uni_Y2;
@@ -88,7 +74,6 @@ void set_mode(double keff, double *field, double *deriv, int real)
   }
   else
   {
-    // Field
     uni_X1 = rand_uniform();
     uni_Y1 = rand_uniform();
     gauss_X1 = sqrt(log(1./uni_X1));
@@ -128,7 +113,7 @@ void set_mode(double keff, double *field, double *deriv, int real)
       deriv[1] = - ad*field[1] + f_norm*sqrt(pw2(keff)+1.)*(cos(gauss_Y1)*gauss_X1 - cos(gauss_Y2)*gauss_X2)/sqrt(2.);
     }
 
-    if(real==1) // For real modes set the imaginary parts to zero
+    if(real==1)
     {
       field[1] = 0.;
       deriv[1] = 0.;
@@ -140,9 +125,7 @@ void set_mode(double keff, double *field, double *deriv, int real)
 
 
 
-/* Set initial parameters and field values */
-/*---------------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------------*/
+// Setting Initial Values
 void initialize()
 {
   int fld;
@@ -152,11 +135,11 @@ void initialize()
   FILE *old_grid_;
 
   int i,j,k,iconj,jconj;
-  double px,py,pz; // Components of momentum in units of grid spacing
+  double px,py,pz;
   double fnyquist[N][2*N],fdnyquist[N][2*N];
   int arraysize[]={N,N,N};
 
-  /* DEBUG: Courant condition dt/dx < 1/Sqrt(ndims) */
+  // DEBUG: Courant condition dt/dx < 1/Sqrt(ndims)
   if(dt>dx/sqrt((double)NDIMS))
   {
     printf("ERROR: Time step too large. The ratio dt/dx is currently %f but for stability should never exceed 1/sqrt(%d) (%f)\n",dt/dx,NDIMS,1./sqrt((double)NDIMS));
@@ -164,7 +147,7 @@ void initialize()
     exit(1);
   }
 
-  /* Output initializations - Set values of nfldsout and ext_ */
+  // Output initializations - Set values of nfldsout and ext_
   if(alt_extension[0]!='\0') // If an alternate extension was given use that instead of the default "_<run_number>.dat"
     sprintf(ext_,"%s",alt_extension);
 
@@ -197,13 +180,12 @@ void initialize()
   }
 
 
-  /* The case of initializing without grid image*/
+  /* The case of initializing without grid image */
   /*---------------------------------------------------------------------------------*/
   printf("OK: Generating initial conditions for new run at t=0\n");
   t0=0;
   run_number=0;
 
-  /* Set initial_field_values and derivs */
   for(fld=0;fld<nflds;fld++)
   {
     if(fld<(int)(sizeof initfield/sizeof(double)))
@@ -217,7 +199,7 @@ void initialize()
       initial_field_derivs[fld]=0.;
   }
 
-  /* Set hubble parameter */
+  // Set hubble parameter
   hubble_init = sqrt((pw2(initderivs[0])+2.*hubble_pote())/6.);
   if(!(hubble_init>=0.))
   {
@@ -226,7 +208,7 @@ void initialize()
   }
   ad=hubble_init;
 
-  /* Set inflaton fluctuation */
+  // Set Inflaton Fluctuation
   for(fld=0;fld<nflds;fld++) 
   {
     for(i=0;i<N;i++)
@@ -268,41 +250,41 @@ void initialize()
         {
           // k=0
           keff=2.*sqrt(pw2(sin(pi*(double)px/(double)N))+pw2(sin(pi*(double)py/(double)N)))/dx;
-          if(keff>0.) // Don't set the zeromode here (see below)
-            set_mode(keff,&f[fld][i][j][0],&fd[fld][i][j][0],1); // The last argument specifies that a real value should be set
+          if(keff>0.)
+            set_mode(keff,&f[fld][i][j][0],&fd[fld][i][j][0],1);
           // k=N/2
           keff=2.*sqrt(pw2(sin(pi*(double)px/(double)N))+pw2(sin(pi*(double)py/(double)N))+1.)/dx;
-          set_mode(keff,&fnyquist[i][2*j],&fdnyquist[i][2*j],1); // The last argument specifies that a real value should be set
+          set_mode(keff,&fnyquist[i][2*j],&fdnyquist[i][2*j],1);
         }
       }
     }
 
-    /* Set zero mode */
+    // Set zero mode
     f[fld][0][0][0]=0.;
     f[fld][0][0][1]=0.;
     fd[fld][0][0][0]=0.;
     fd[fld][0][0][1]=0.;
 
-    /* DEBUG: zero mode */
+    // DEBUG: zero mode
     if(f[0][0][0][0]==0. && f[0][0][0][1]==0. && fd[0][0][0][0]==0. && fd[0][0][0][1]==0.)
       printf("OK: Zero mode is zero\n");
     else
       printf("ERROR: Zero mode is not zero\n");
 
-    /* Inverse FFT */
+    // Inverse FFT
     if(seed>=0)
     {
       fftrn((double *)f[fld],(double *)fnyquist,NDIMS,arraysize,-1);
       fftrn((double *)fd[fld],(double *)fdnyquist,NDIMS,arraysize,-1);
     }
 
-    /* DEBUG: if fluctuation is small */
+    // DEBUG: if fluctuation is small
     if(f[0][0][0][0]<0.01 && f[0][1][50][32]<0.01)
       printf("OK: Fluctuation is small\n");
     else
       printf("ERROR: Flucuation is not small\n");
 
-    /* Adding back ground */
+    // Adding back ground
     LOOP
     {
       FIELD(fld) += initial_field_values[fld];
@@ -310,7 +292,7 @@ void initialize()
     }
   }
 
-  /* Post processing */
+  // Post processing
   save(0);
   output_parameters();
   printf("OK: Finished initial conditions\n");

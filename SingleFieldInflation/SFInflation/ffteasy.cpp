@@ -27,8 +27,6 @@ For any comments or questions you can reach me at
 gfelder@email.smith.edu.
 */
 
-// このファイルには手をつけない
-
 /* These declarations are put here so you can easily cut and paste them into your program. */
 void fftc1(double f_arg[], int N_arg, int skip, int forward);
 void fftcn(double f_arg[], int ndims, int size[], int forward);
@@ -263,5 +261,3 @@ void fftrn(double f_arg[], double fnyquist[], int ndims, int size[], int forward
   size[ndims-1] *= 2; /* Give the user back the array size[] in its original condition */
   free(indices); /* Free up memory allocated for indices array */
 }
-
-

@@ -1,10 +1,11 @@
+/* This file implement Output Function "output_parameters()" and "save()" */
+
 #include "latticeeasy.hpp"
 #include "element_out.hpp"
 
 char name_[500]; // Filenames - set differently by each function to open output files
 
-/* Mean values and variance*/
-/*---------------------------------------------------------------*/
+// Output Mean Values Related to Inflaton Field
 void meansvars(int flush)
 {
   static FILE *means_[nflds];
@@ -61,8 +62,7 @@ void meansvars(int flush)
 }
 
 
-/* Scale factor */
-/*---------------------------------------------------------------*/
+// Output Values related to Scale Factor
 void scale(int flush)
 {
   static FILE *sf_;
@@ -75,15 +75,13 @@ void scale(int flush)
     first=0;
   }
 
-  /* Output a, H, a'', N in physical units */
   fprintf(sf_,"%f %f %e %f\n",t,a,ad*pow(a,rescale_s-2.),log(a));
   if(flush)
     fflush(sf_);
 }
 
 
-/* Energy and conservation and slow-roll */
-/*---------------------------------------------------------------------------------*/
+// Output Values related to Energy of Inflaton
 void energy()
 {
   static FILE *energy_;
@@ -103,7 +101,7 @@ void energy()
 
   fprintf(energy_,"%f",t);
 
-  /* Kinetic energy */
+  // Kinetic energy
   for(fld=0;fld<nflds;fld++)
   {
     deriv_energy = 0.5*field_deriv2(fld)/pw2(a);
@@ -119,12 +117,12 @@ void energy()
     fprintf(energy_," %e",grad_energy);
   }
 
-  /* Potential energy and total energy */
+  // Potential energy and total energy
   pot_energy = potential_energy();
   total += pot_energy;
   fprintf(energy_," %e %e",pot_energy,total);
 
-  /* Energy conservation and slow-roll parameter */
+  // Energy conservation and slow-roll parameter
   slow_eps0 = (deriv_energy-pot_energy)/(deriv_energy+pot_energy);
   slow_eps0 = 3.*(1.+slow_eps0)/2.;
   fd2       = deriv_energy*2.*pw2(a);
@@ -146,26 +144,25 @@ void energy()
 
 
 
-/* Power spectra */
-/*---------------------------------------------------------------------------------*/
+// Output Inflaton Power Spectra
 void spectra()
 {
   static FILE *spectra_[nflds],*spectra_eff_[nflds],*spectratimes_;
   int fld;
-  const int maxnumbins=(int)(1.73205*(N/2))+1; // Number of bins (bin spacing=lattice spacing in Fourier space) = sqrt(NDIMS)*(N/2)+1. Set for 3D (i.e. biggest possible).
-  int numpoints[maxnumbins],numpoints_eff[maxnumbins]; // Number of points in each momentum bin
+  const int maxnumbins=(int)(1.73205*(N/2))+1; // Number of bins
+  int numpoints[maxnumbins],numpoints_eff[maxnumbins];
   double p[maxnumbins],pave[maxnumbins],peff_ave[maxnumbins],f2[maxnumbins];
   double p_eff[maxnumbins],pave_eff[maxnumbins],f2_eff[maxnumbins];
 
   int numbins=(int)(sqrt((double)NDIMS)*(N/2))+1;
-  double pmagnitude; // Total momentum (p) in units of lattice spacing, pmagnitude = Sqrt(px^2+py^2+pz^2)
+  double pmagnitude; // |m|=Sqrt(mx^2+my^2+mz^2)
   double peffmagnitude;
-  double dp=2.*pi/L; // Size of grid spacing in momentum space
-  double fp2; // Square magnitude of field (fp2) and derivative (fpd2) for a given mode
+  double dp=2.*pi/L;
+  double fp2;
 
   // parameter with dimension
-  int i,j,k,px,py,pz; // px, py, and pz are components of momentum in units of grid spacing
-  double fnyquist[N][2*N],fdnyquist[N][2*N];
+  int i,j,k,mx,my,mz;
+  double fnyquist[N][2*N];
   int arraysize[]={N,N,N};
 
 
@@ -184,47 +181,46 @@ void spectra()
     first=0;
   }
 
-  /* Pre processing */
+  // Pre Processing
   for(i=0;i<numbins;i++)
   {
     p[i]=dp*i;
     p_eff[i]=dp*i;
   }
     
-  for(fld=0;fld<nflds;fld++) // Find power spectra for each field
+  for(fld=0;fld<nflds;fld++)
   {
-    for(i=0;i<numbins;i++) // Initialize all bins to 0
+    for(i=0;i<numbins;i++)
     {
-      numpoints[i]=0; // Number of points in the bin
+      numpoints[i]=0;
       pave[i]=0.;
       peff_ave[i]=0.;
-      f2[i]=0.; // |f_p|^2
+      f2[i]=0.;
 
       numpoints_eff[i]=0;
       pave_eff[i]=0.;
       f2_eff[i]=0.;
     }
 
-    /* FFT */
+    // FFT
     fftrn((double *)f[fld],(double *)fnyquist,NDIMS,arraysize,1);
-    fftrn((double *)fd[fld],(double *)fdnyquist,NDIMS,arraysize,1);
 
 
-    /* Calculating spectra */
+    // Calculating Spectra
     for(i=0;i<N;i++)
     {
-      px=(i<=N/2 ? i : i-N);
+      mx=(i<=N/2 ? i : i-N);
       for(j=0;j<N;j++)
       {
-        py=(j<=N/2 ? j : j-N);
+        my=(j<=N/2 ? j : j-N);
 
         /* Mode with 0<k<N/2 */
         for(k=1;k<N/2;k++) 
         {
-          pz=k;
+          mz=k;
 
-          pmagnitude=sqrt(pw2(px)+pw2(py)+pw2(pz)); // Magnitude of momentum of mode in units of momentum grid spacing
-          peffmagnitude=(double)N*sqrt(pw2(sin(pi*(double)px/(double)N))+pw2(sin(pi*(double)py/(double)N))+pw2(sin(pi*(double)pz/(double)N)))/pi;
+          pmagnitude=sqrt(pw2(mx)+pw2(my)+pw2(mz));
+          peffmagnitude=(double)N*sqrt(pw2(sin(pi*(double)mx/(double)N))+pw2(sin(pi*(double)my/(double)N))+pw2(sin(pi*(double)mz/(double)N)))/pi;
           fp2=pw2(f[fld][i][j][2*k])+pw2(f[fld][i][j][2*k+1]);
 
           numpoints[(int)pmagnitude] += 2;
@@ -237,13 +233,13 @@ void spectra()
           f2_eff[(int)peffmagnitude] += 2.*fp2;
         }
 
-        /* Mode with k=0,N/2 */
+        // Mode with k=0,N/2
         for(k=0;k<=N/2;k+=N/2)
         {
-          pz=k;
+          mz=k;
 
-          pmagnitude=sqrt(pw2(px)+pw2(py)+pw2(pz));
-          peffmagnitude=(double)N*sqrt(pw2(sin(pi*(double)px/(double)N))+pw2(sin(pi*(double)py/(double)N))+pw2(sin(pi*(double)pz/(double)N)))/pi;
+          pmagnitude=sqrt(pw2(mx)+pw2(my)+pw2(mz));
+          peffmagnitude=(double)N*sqrt(pw2(sin(pi*(double)mx/(double)N))+pw2(sin(pi*(double)my/(double)N))+pw2(sin(pi*(double)mz/(double)N)))/pi;
           if(k==0) // Amplitudes of k=0 modes
           {   
             fp2=pw2(f[fld][i][j][0])+pw2(f[fld][i][j][1]);
@@ -272,20 +268,21 @@ void spectra()
     /* spectra_0.dat and spectra_eff_0.dat */
     for(i=0;i<numbins;i++)
     {
-      if(numpoints[i]>0) // Convert sums to averages. (numpoints[i] should always be greater than zero.)
+      // Convert sums to averages. (numpoints[i] should always be greater than zero.)
+      if(numpoints[i]>0)
       {
         pave[i] = pave[i]*dp/numpoints[i];
         peff_ave[i] = peff_ave[i]*dp/numpoints[i];
         f2[i] = f2[i]/numpoints[i];
       }
-      if(numpoints_eff[i]>0) // Convert sums to averages. (numpoints[i] should always be greater than zero.)
+      if(numpoints_eff[i]>0)
       {
         pave_eff[i] = pave_eff[i]*dp/numpoints_eff[i];
         f2_eff[i] = f2_eff[i]/numpoints_eff[i];
       }
       // Output the momentum, number of points, omega, and calculated spectra for each bin
-      fprintf(spectra_[fld],"%e %d %e %e %e\n",// %e %e %e\n",
-        p[i],numpoints[i],pave[i],peff_ave[i],f2[i]);//,norm1*fd2[i],norm2*ndensity[i],norm2*rhodensity[i]);
+      fprintf(spectra_[fld],"%e %d %e %e %e\n",
+        p[i],numpoints[i],pave[i],peff_ave[i],f2[i]);
       fprintf(spectra_eff_[fld],"%e %d %e %e\n",
         p_eff[i],numpoints_eff[i],pave_eff[i],f2_eff[i]);
     }
@@ -294,9 +291,8 @@ void spectra()
     fprintf(spectra_eff_[fld],"\n");
     fflush(spectra_eff_[fld]);
 
-    /* Inverse FFT */
+    // Inverse FFT
     fftrn((double *)f[fld],(double *)fnyquist,NDIMS,arraysize,-1);
-    fftrn((double *)fd[fld],(double *)fdnyquist,NDIMS,arraysize,-1);
   }
 
   /* spectratimes_0.dat */
@@ -308,7 +304,8 @@ void spectra()
   return;
 }
 
-/* Probability distribution function */
+
+// Output Probability Distribution Function
 void pdf()
 {
   static FILE *pdf_[nflds];
@@ -437,7 +434,6 @@ void checkpoint()
 
 
 
-
 // Convert a time in seconds to a more readable form and print the results
 void readable_time(int t, FILE *info_)
 {
@@ -481,11 +477,10 @@ void readable_time(int t, FILE *info_)
 }
 
 /////////////////////////////////////////////////////
-// Externally called function(s)
+// Important Function
 /////////////////////////////////////////////////////
 
 // Output information about the run parameters.
-// This need only be called at the beginning and end of the run.
 void output_parameters()
 {
   static FILE *info_,*python_;
@@ -532,7 +527,6 @@ void output_parameters()
     python_=fopen("python.dat","w");
     fprintf(python_,"%d %d %f %e %d %d %d %d %d %d\n",MODEL,N,L,m,smeansvars,sexpansion,senergy,sspectra,spdf,pdfrange);
     fprintf(python_,"%f %f ",initfield[0],ad);
-    //fprintf(python_,"%d %d %f %e %f %f ",MODEL,N,L,m,initfield[0],ad);
 
     first=0;
   }

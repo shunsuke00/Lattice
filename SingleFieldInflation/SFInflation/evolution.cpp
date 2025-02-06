@@ -1,7 +1,10 @@
+/* This file implements time evolution function "evolve_rk4()" */
+
 #include "latticeeasy.hpp"
 #include "element_evo.hpp"
 
 
+// Evolve Inflaton Field
 void evolve_fields(double d, int kloop_arg, SUB_ARG, double kf[nflds][N][N][N])
 {
   DECLARE_INDICES
@@ -47,6 +50,7 @@ void evolve_fields(double d, int kloop_arg, SUB_ARG, double kf[nflds][N][N][N])
 }
 
 
+// Evolve Time Derivative of Inflaton Field
 void evolve_derivs(double d, int kloop_arg, SUB_ARG, double kfd[nflds][N][N][N])
 {
   int i=0,j=0,k=0,fld;
@@ -224,6 +228,7 @@ void evolve_derivs(double d, int kloop_arg, SUB_ARG, double kfd[nflds][N][N][N])
 }
 
 
+// Evolve Scale Factor
 void evolve_scale(double d, int kloop_arg)
 {
   switch(kloop_arg)
@@ -247,7 +252,7 @@ void evolve_scale(double d, int kloop_arg)
 }
 
 
-
+// Evolve Time Derivative of Scale Factor
 void evolve_scaled(double d, int kloop_arg, SUB_ARG)
 {
   double tempad;
@@ -276,6 +281,7 @@ void evolve_scaled(double d, int kloop_arg, SUB_ARG)
 }
 
 
+// Important Function of Evolve 1 Step
 void evolve_rk4(double dt, SUB_ARG, double kf[nflds][N][N][N], double kfd[nflds][N][N][N])
 {
   DECLARE_INDICES

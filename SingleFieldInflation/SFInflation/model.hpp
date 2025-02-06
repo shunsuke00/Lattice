@@ -1,13 +1,5 @@
-/*
-General comments about the model.h file:
-This file contains the following functions - all called externally
-modelinfo(FILE *info_) outputs information about the model and model-specific parameters to a file.
-modelinitialize() performs any model-specific initialization
-potential_energy(int term, double *field_values) calculates the average potential energy density term by term. The variable num_potential_terms (just above this function) specifies how many separate potential terms are used in this model.
-dvdf(int fld, int i, int j, int k) calculates the potential term in the equation of motion, dV/dfield, for the field fld at the lattice point (i,j,k)
-effective_mass(double mass_sq[], double *field_values) calculates the square masses of the fields and puts them in the array mass_sq. The parameter beginning tells the function to use initial field values - if this parameter is zero then the field quantities will be calculated dynamically.
-model_output(int flush, char *ext_) allows each model to include its own specialized output function(s). The parameter flush is set to 1 when infrequent calculations are being performed and 0 otherwise. The string ext_ gives the extension for output filenames.
-*/
+/* This file implements Inflaton Potential Function */
+
 #ifndef _MODEL_
 #define _MODEL_
 
@@ -19,14 +11,7 @@ model_output(int flush, char *ext_) allows each model to include its own special
 /*---------------------------------------------------------------------------*/
 #if MODEL==0
 
-/* - This section should be copied into parameters.h when using this model
-// ---Adjustable parameters for ONEFLDM model--- //
-const double m =0.51e-5;
-const double m2=2.601e-11;
-*/
-
-
-// By default these are automatically set to A=1/f0, B=sqrt(cpl) f0^(-1+beta/2), R=6/(2+beta), S=3(2-beta)/(2+beta). They may be adjusted to different values, but the relationship S=2R-3 must be maintained for the program equations to remain correct.
+// Rescaling Parameters
 const double rescale_B=m;
 const double rescale_s=1.;
 
@@ -38,7 +23,7 @@ inline void modelinfo(FILE *info_)
   fprintf(info_,"m = %e\n",m);
 }
 
-
+// V(phi)
 inline double potential_energy(int kloop=1, double fsub1[nflds][N][N][N]=NULL, double fsub2[nflds][N][N][N]=NULL)
 {
   DECLARE_INDICES
@@ -79,6 +64,7 @@ inline double potential_energy(int kloop=1, double fsub1[nflds][N][N][N]=NULL, d
 }
 
 
+// dV/dphi
 inline double dvdf(int fld, int i, int j, int k, int kloop=1, double fsub1[nflds][N][N][N]=NULL, double fsub2[nflds][N][N][N]=NULL)
 {
   double value;
@@ -99,17 +85,18 @@ inline double dvdf(int fld, int i, int j, int k, int kloop=1, double fsub1[nflds
   return value;
 }
 
-
+// Used in Hubble Initial Condition
 inline double hubble_pote()
 {
   return (0.5*pw2(initfield[0]));
 }
 
+
+// d^2V/dphi^2
 inline double dvdf2()
 {
   return (1.);
 }
-
 
 
 
@@ -118,15 +105,12 @@ inline double dvdf2()
 /*---------------------------------------------------------------------------*/
 #elif MODEL==1
 
-/* - This section should be copied into parameters.h when using this model
-// ---Adjustable parameters for ONEFLD step model--- //
-const double m =0.51e-5;
-*/
+// Model Parameters
 const double model_s =0.01;
 const double model_d =0.005;
 const double model_step=14.35;
 
-// By default these are automatically set to A=1/f0, B=sqrt(cpl) f0^(-1+beta/2), R=6/(2+beta), S=3(2-beta)/(2+beta). They may be adjusted to different values, but the relationship S=2R-3 must be maintained for the program equations to remain correct.
+// Rescaling Parameters
 const double rescale_B=m;
 const double rescale_s=1.;
 
@@ -138,7 +122,7 @@ inline void modelinfo(FILE *info_)
   fprintf(info_,"m = %e\n",m);
 }
 
-
+// V(phi)
 inline double potential_energy(int kloop=1, double fsub1[nflds][N][N][N]=NULL, double fsub2[nflds][N][N][N]=NULL)
 {
   DECLARE_INDICES
@@ -179,6 +163,7 @@ inline double potential_energy(int kloop=1, double fsub1[nflds][N][N][N]=NULL, d
 }
 
 
+// dV/dphi
 inline double dvdf(int fld, int i, int j, int k, int kloop=1, double fsub1[nflds][N][N][N]=NULL, double fsub2[nflds][N][N][N]=NULL)
 {
   double value;
@@ -205,11 +190,14 @@ inline double dvdf(int fld, int i, int j, int k, int kloop=1, double fsub1[nflds
 }
 
 
+// Used in Hubble Initial Condition
 inline double hubble_pote()
 {
   return (0.5*pw2(initfield[0])*(1.+model_s*tanh((initfield[0]-model_step)/model_d)))
 }
 
+
+// d^2/dphi^2
 inline double dvdf2()
 {
   return (1. + model_s*tanh((initfield[0]-model_step)/model_d)+model_s*initfield[0]*(2.-initfield[0]*tanh((initfield[0]-model_step)/model_d)/model_d)/(model_d*pw2(cosh((initfield[0]-model_step)/model_d))));
