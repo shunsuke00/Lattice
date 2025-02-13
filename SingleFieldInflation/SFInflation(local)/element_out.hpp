@@ -1,5 +1,5 @@
-#ifndef _ELEMENT_EVO_
-#define _ELEMENT_EVO_
+#ifndef _ELEMENT_OUT_
+#define _ELEMENT_OUT_
 
 #include "latticeeasy.hpp"
 
@@ -20,10 +20,8 @@ int DECREMENT_OUT(int i)
 /* Laplacian */
 /*------------------------------------------------------------------------------------*/
 /*------------------------------------------------------------------------------------*/
-double lapl_out(int fld, int i, int j, int k, ARG)
+inline double FieldBase::lapl_out(int fld, int i, int j, int k)
 {
-  double (*f)[N][N][N] = flist[0];
-
     return (f[fld][i][j][k+1] + f[fld][i][j][k-1]
             +f[fld][i][j+1][k] + f[fld][i][j-1][k]
             +f[fld][i+1][j][k] + f[fld][i-1][j][k]
@@ -31,10 +29,8 @@ double lapl_out(int fld, int i, int j, int k, ARG)
 }
 
 
-double laplb_out(int fld, int i, int j, int k, ARG)
+inline double FieldBase::laplb_out(int fld, int i, int j, int k)
 {
-  double (*f)[N][N][N] = flist[0];
-
     return (f[fld][i][j][INCREMENT_OUT(k)] + f[fld][i][j][DECREMENT_OUT(k)]
             +f[fld][i][INCREMENT_OUT(j)][k] + f[fld][i][DECREMENT_OUT(j)][k]
             +f[fld][INCREMENT_OUT(i)][j][k] + f[fld][DECREMENT_OUT(i)][j][k]
@@ -48,12 +44,10 @@ double laplb_out(int fld, int i, int j, int k, ARG)
 /*------------------------------------------------------------------------------------*/
 // Field Value
 /*------------------------------------------------------------------------------------*/
-double field_value(int fld, ARG)
+inline double FieldBase::field_value(int fld)
 {
     int i,j,k;
     double value;
-
-    double (*f)[N][N][N] = flist[0];
 
     #pragma omp parallel for reduction(+:value) num_threads(num_thread) private(j,k)
     LOOP
@@ -65,12 +59,10 @@ double field_value(int fld, ARG)
 
 // Field derivative
 /*------------------------------------------------------------------------------------*/
-double field_deriv(int fld, ARG)
+inline double FieldBase::field_deriv(int fld)
 {
     int i,j,k;
     double value;
-
-    double (*fd)[N][N][N] = flist[1];
 
     #pragma omp parallel for reduction(+:value) num_threads(num_thread) private(j,k)
     LOOP
@@ -82,12 +74,10 @@ double field_deriv(int fld, ARG)
 
 // Field Value ^2
 /*------------------------------------------------------------------------------------*/
-double field_value2(int fld, ARG)
+inline double FieldBase::field_value2(int fld)
 {
     int i,j,k;
     double value;
-
-    double (*f)[N][N][N] = flist[0];
 
     #pragma omp parallel for reduction(+:value) num_threads(num_thread) private(j,k)
     LOOP
@@ -99,12 +89,10 @@ double field_value2(int fld, ARG)
 
 // Field derivative ^2
 /*------------------------------------------------------------------------------------*/
-double field_deriv2(int fld, ARG)
+inline double FieldBase::field_deriv2(int fld)
 {
     int i,j,k;
     double value;
-
-    double (*fd)[N][N][N] = flist[1];
 
     #pragma omp parallel for reduction(+:value) num_threads(num_thread) private(j,k)
     LOOP
@@ -117,30 +105,28 @@ double field_deriv2(int fld, ARG)
 
 // Field*Laplacian <|Grad(f)|^2> = <-f Lapl(f)>
 /*------------------------------------------------------------------------------------*/
-double field_lapl(int fld, ARG)
+inline double FieldBase::field_lapl(int fld)
 {
     int i,j,k;
     double value;
     double norm=1./pw2(dx);
-
-    double (*f)[N][N][N] = flist[0];
 
     #pragma omp parallel for reduction(-:value) num_threads(num_thread) private(j,k)
       for(i=1;i<N-1;i++)
         for(j=1;j<N-1;j++)
           for(k=1;k<N-1;k++)
           {
-            value -= FIELD(fld)*lapl_out(fld,i,j,k,flist);
+            value -= FIELD(fld)*lapl_out(fld,i,j,k);
           }
     #pragma omp parallel for reduction(-:value) num_threads(num_thread) private(j)
       for(i=0;i<N;i++)
         for(j=0;j<N;j++)
         {
-          value -= f[fld][i][j][0]*laplb_out(fld,i,j,0,flist) + f[fld][i][j][N-1]*laplb_out(fld,i,j,N-1,flist); // z=0,N-1
+          value -= f[fld][i][j][0]*laplb_out(fld,i,j,0) + f[fld][i][j][N-1]*laplb_out(fld,i,j,N-1); // z=0,N-1
           if(j==0 || j==N-1) continue;
-          value -= f[fld][i][0][j]*laplb_out(fld,i,0,j,flist) + f[fld][i][N-1][j]*laplb_out(fld,i,N-1,j,flist); // y=0,N-1
+          value -= f[fld][i][0][j]*laplb_out(fld,i,0,j) + f[fld][i][N-1][j]*laplb_out(fld,i,N-1,j); // y=0,N-1
           if(i==0 || i==N-1) continue;
-          value -= f[fld][0][i][j]*laplb_out(fld,0,i,j,flist) + f[fld][N-1][i][j]*laplb_out(fld,N-1,i,j,flist); // x=0,N-1
+          value -= f[fld][0][i][j]*laplb_out(fld,0,i,j) + f[fld][N-1][i][j]*laplb_out(fld,N-1,i,j); // x=0,N-1
         }
 
     return value*norm/(double)gridsize;
@@ -150,31 +136,28 @@ double field_lapl(int fld, ARG)
 
 // Fieldderiv*Laplacian <fd*Lapl(f)>
 /*------------------------------------------------------------------------------------*/
-double fieldderiv_lapl(int fld, ARG)
+inline double FieldBase::fieldderiv_lapl(int fld)
 {
     int i,j,k;
     double value;
     double norm=1./pw2(dx);
-
-    double (*f)[N][N][N] = flist[0];
-    double (*fd)[N][N][N] = flist[1];
 
     #pragma omp parallel for reduction(+:value) num_threads(num_thread) private(j,k)
       for(i=1;i<N-1;i++)
         for(j=1;j<N-1;j++)
           for(k=1;k<N-1;k++)
           {
-            value += FIELDD(fld)*lapl_out(fld,i,j,k,flist);
+            value += FIELDD(fld)*lapl_out(fld,i,j,k);
           }
     #pragma omp parallel for reduction(+:value) num_threads(num_thread) private(j)
       for(i=0;i<N;i++)
         for(j=0;j<N;j++)
         {
-          value += fd[fld][i][j][0]*laplb_out(fld,i,j,0,flist) + fd[fld][i][j][N-1]*laplb_out(fld,i,j,N-1,flist); // z=0,N-1
+          value += fd[fld][i][j][0]*laplb_out(fld,i,j,0) + fd[fld][i][j][N-1]*laplb_out(fld,i,j,N-1); // z=0,N-1
           if(j==0 || j==N-1) continue;
-          value += fd[fld][i][0][j]*laplb_out(fld,i,0,j,flist) + fd[fld][i][N-1][j]*laplb_out(fld,i,N-1,j,flist); // y=0,N-1
+          value += fd[fld][i][0][j]*laplb_out(fld,i,0,j) + fd[fld][i][N-1][j]*laplb_out(fld,i,N-1,j); // y=0,N-1
           if(i==0 || i==N-1) continue;
-          value += fd[fld][0][i][j]*laplb_out(fld,0,i,j,flist) + fd[fld][N-1][i][j]*laplb_out(fld,N-1,i,j,flist); // x=0,N-1
+          value += fd[fld][0][i][j]*laplb_out(fld,0,i,j) + fd[fld][N-1][i][j]*laplb_out(fld,N-1,i,j); // x=0,N-1
         }
 
     return value*norm/(double)gridsize;
@@ -183,16 +166,14 @@ double fieldderiv_lapl(int fld, ARG)
 
 // Fieldderiv*dvdf
 /*------------------------------------------------------------------------------------*/
-double fieldderiv_dvdf(int fld, ARG)
+inline double FieldBase::fieldderiv_dvdf(int fld)
 {
     int i,j,k;
     double value;
 
-    double (*fd)[N][N][N] = flist[1];
-
     #pragma omp parallel for reduction(+:value) num_threads(num_thread) private(j,k)
     LOOP
-        value += FIELDD(fld)*dvdf(0,i,j,k,1,flist);
+        value += FIELDD(fld)*dvdf(0,i,j,k);
 
     return value/(double)gridsize;
 }
