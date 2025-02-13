@@ -1,5 +1,5 @@
-#ifndef _ELEMENT_EVO_
-#define _ELEMENT_EVO_
+#ifndef _ELEMENT_OUT_
+#define _ELEMENT_OUT_
 
 #include "latticeeasy.hpp"
 
