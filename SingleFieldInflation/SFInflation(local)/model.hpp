@@ -133,10 +133,14 @@ inline void modelinfo(FILE *info_)
 }
 
 // V(phi)
-inline double potential_energy(int kloop=1, double fsub1[nflds][N][N][N]=NULL, double fsub2[nflds][N][N][N]=NULL)
+inline double potential_energy(int kloop, ARG)
 {
   DECLARE_INDICES
   double potential=0.;
+
+  double (*f)[N][N][N] = flist[0];
+  double (*fsub1)[N][N][N] = flist[2];
+  double (*fsub2)[N][N][N] = flist[4];
 
   switch(kloop)
   {
@@ -174,10 +178,14 @@ inline double potential_energy(int kloop=1, double fsub1[nflds][N][N][N]=NULL, d
 
 
 // dV/dphi
-inline double dvdf(int fld, int i, int j, int k, int kloop=1, double fsub1[nflds][N][N][N]=NULL, double fsub2[nflds][N][N][N]=NULL)
+inline double dvdf(int fld, int i, int j, int k, int kloop, ARG)
 {
   double value;
   double phase;
+
+  double (*f)[N][N][N] = flist[0];
+  double (*fsub1)[N][N][N] = flist[2];
+  double (*fsub2)[N][N][N] = flist[4];
 
   switch(kloop)
   {
