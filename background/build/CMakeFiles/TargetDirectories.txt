@@ -1,0 +1,3 @@
+/Users/tsuchitashunsuke/Dropbox/lattice/background/build/CMakeFiles/a.out.dir
+/Users/tsuchitashunsuke/Dropbox/lattice/background/build/CMakeFiles/edit_cache.dir
+/Users/tsuchitashunsuke/Dropbox/lattice/background/build/CMakeFiles/rebuild_cache.dir
